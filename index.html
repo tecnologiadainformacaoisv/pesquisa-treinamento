@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pesquisas de Treinamento ISV</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,500&display=swap">
+<style>
+/* Layout: coluna única de leitura (720px) sobre branco, como os slides do relatório ISV:
+   título serifado azul-marinho, rótulos pequenos em cobre, cartões creme com barra superior colorida. */
+:root{
+  --bg:#ffffff; --surface:#faf8f4; --line:#e6e2d8; --ink:#1a1f2e; --ink2:#4a5366; --muted:#6f7a90;
+  --navy:#002060; --copper:#b36a2c; --green:#2ab251; --blue:#094c84; --teal:#0f4c5c;
+  --ok:#4a7c59; --bad:#b94545; --on-navy:#ffffff; --track:#ece8de; --chip:#ffffff;
+  --serif:Cambria,"Source Serif 4",Georgia,serif;
+  --sans:Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10141f; --surface:#1a2030; --line:#2e3649; --ink:#eceef3; --ink2:#bcc3d1; --muted:#8f99ad;
+  --navy:#cadcfc; --copper:#dc9a60; --green:#3cc765; --blue:#5aa2dc; --teal:#5fb0c2;
+  --ok:#7fb48f; --bad:#e07a7a; --on-navy:#10141f; --track:#262d3f; --chip:#ffffff; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10141f; --surface:#1a2030; --line:#2e3649; --ink:#eceef3; --ink2:#bcc3d1; --muted:#8f99ad;
+  --navy:#cadcfc; --copper:#dc9a60; --green:#3cc765; --blue:#5aa2dc; --teal:#5fb0c2;
+  --ok:#7fb48f; --bad:#e07a7a; --on-navy:#10141f; --track:#262d3f; --chip:#ffffff; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.5;
+  border-top:6px solid var(--green)}
+.wrap{max-width:760px;margin:0 auto;padding-inline:20px;padding-block:20px 56px;display:flex;flex-direction:column;gap:28px}
+.wrap.wide{max-width:980px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.logo{background:var(--chip);border-radius:10px;padding:6px 10px;display:inline-flex;border:0;cursor:pointer}
+.logo svg{height:46px;width:auto;display:block}
+.toplinks{display:flex;gap:8px;flex-wrap:wrap}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--copper);margin:0}
+h1,h2,h3{font-family:var(--serif);color:var(--navy);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(30px,6vw,44px);font-weight:700}
+h1 em{display:block;font-weight:500}
+h2{font-size:26px}
+h3{font-size:19px}
+p{margin:0}
+.lead{color:var(--ink2);max-width:62ch}
+.rule{height:3px;width:160px;background:var(--copper);border:0;margin:0}
+
+/* hero */
+.hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding-block:8px 120px}
+.shapes{position:absolute;right:0;bottom:0;width:230px;height:104px;pointer-events:none}
+.shapes i{position:absolute;display:block}
+.shapes .a{left:0;bottom:0;width:104px;height:104px;border-radius:104px 0 0 0;background:var(--green)}
+.shapes .b{left:92px;bottom:0;width:104px;height:104px;border-radius:50%;
+  background:linear-gradient(90deg,var(--blue) 50%,var(--green) 50%)}
+.shapes .c{right:0;bottom:0;width:52px;height:104px;border-radius:0 0 0 0;background:var(--navy);opacity:.9;
+  border-top-left-radius:52px;border-bottom-left-radius:52px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--teal);border-radius:4px;
+  padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.c2{border-top-color:var(--copper)}
+.card p{color:var(--ink2)}
+.card .btn{margin-top:auto;align-self:flex-start}
+
+.btn{font:inherit;font-weight:700;border-radius:999px;border:2px solid var(--navy);background:var(--navy);color:var(--on-navy);
+  padding:11px 22px;cursor:pointer;min-height:48px}
+.btn.ghost{background:transparent;color:var(--navy)}
+.btn.small{min-height:38px;padding:6px 14px;font-size:15px}
+.btn.danger{border-color:var(--bad);background:transparent;color:var(--bad)}
+.btn:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
+
+/* form */
+.progress{display:flex;flex-direction:column;gap:6px}
+.progress .bar{height:6px;background:var(--track);border-radius:6px;overflow:hidden}
+.progress .bar i{display:block;height:100%;background:var(--green);border-radius:6px;transition:width .25s}
+@media (prefers-reduced-motion:reduce){.progress .bar i{transition:none}}
+form{display:flex;flex-direction:column;gap:22px}
+.field{display:flex;flex-direction:column;gap:8px;border:0;padding:0;margin:0;min-width:0}
+.field>label,.field>legend{font-weight:700;color:var(--ink);padding:0}
+.field legend{margin-bottom:8px}
+.opt{font-weight:400;color:var(--muted);font-size:14px}
+input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);
+  border-radius:8px;padding:12px 14px;width:100%}
+textarea{min-height:110px;resize:vertical}
+input[type=number]{max-width:160px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.choice{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;
+  background:var(--bg);min-height:50px}
+.choice input{width:20px;height:20px;accent-color:var(--blue);flex:none;margin:0}
+.choice:has(input:checked){border-color:var(--blue);background:var(--surface);font-weight:700}
+.scale{display:flex;gap:8px;flex-wrap:wrap}
+.scale label{flex:1 1 52px;display:flex;align-items:center;justify-content:center;min-height:52px;border:1.5px solid var(--line);
+  border-radius:8px;cursor:pointer;font-weight:700;font-size:19px;position:relative;background:var(--bg)}
+.scale input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.scale label:has(input:checked){background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.scale label:has(input:focus-visible){outline:3px solid var(--copper);outline-offset:2px}
+.legend{display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
+.err{color:var(--bad);font-size:15px;font-weight:700}
+.field.bad input[type=text],.field.bad input[type=number],.field.bad textarea{border-color:var(--bad)}
+.actions{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.note{background:var(--surface);border-left:4px solid var(--copper);padding:12px 16px;color:var(--ink2);font-size:15.5px}
+.field.key{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--copper);border-radius:4px;padding:18px}
+.field.key>label{font-family:var(--serif);font-size:21px;color:var(--navy)}
+.field.key textarea{min-height:160px}
+.why{color:var(--ink2)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:120px;word-break:break-all}
+
+/* painel */
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font:inherit;font-weight:700;border:1.5px solid var(--line);background:var(--bg);color:var(--ink2);border-radius:999px;
+  padding:8px 16px;cursor:pointer;min-height:42px}
+.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:var(--on-navy)}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.toolbar select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--teal);border-radius:4px;padding:16px;min-width:0}
+.kpi:nth-child(2){border-top-color:var(--ok)}.kpi:nth-child(3){border-top-color:var(--blue)}.kpi:nth-child(4){border-top-color:var(--copper)}
+.kpi b{display:block;font-family:var(--serif);font-size:38px;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+.q{display:flex;flex-direction:column;gap:10px;padding-block:18px;border-top:1px solid var(--line);min-width:0}
+.q h3{font-family:var(--sans);font-size:17px;color:var(--ink)}
+.q .meta{color:var(--muted);font-size:14px}
+.bars{display:grid;grid-template-columns:minmax(120px,240px) 1fr auto;gap:6px 12px;align-items:center}
+.bars .lab{font-size:15px;color:var(--ink2);min-width:0}
+.bars .trk{height:18px;background:var(--track);border-radius:2px;overflow:hidden}
+.bars .trk i{display:block;height:100%;background:var(--teal)}
+.bars .val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:520px){.bars{grid-template-columns:1fr auto}.bars .lab{grid-column:1/-1;margin-top:4px}}
+.quotes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.quotes li{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:10px 14px;font-style:italic;color:var(--ink2);
+  overflow-wrap:anywhere}
+.quotes small{display:block;font-style:normal;color:var(--muted);font-size:13px}
+details.resp{border:1px solid var(--line);border-radius:4px;background:var(--surface);min-width:0}
+details.resp summary{cursor:pointer;padding:12px 14px;font-weight:700;overflow-wrap:anywhere}
+details.resp dl{margin:0;padding:0 14px 14px;display:grid;gap:8px}
+details.resp dt{font-size:13px;color:var(--muted)}
+details.resp dd{margin:0;overflow-wrap:anywhere}
+.list{display:flex;flex-direction:column;gap:8px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:4px;padding:28px 20px;text-align:center;color:var(--ink2)}
+footer a{color:inherit}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:14px}
+.stack{display:flex;flex-direction:column;gap:14px}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <header class="top">
+    <button class="logo" id="logo" type="button" aria-label="Instituto São Vicente — início"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="text/ecmascript" fill="#000000" width="1023" zoomAndPan="magnify" contentStyleType="text/css" viewBox="0 0 1023 313" height="313" preserveAspectRatio="xMidYMid meet" version="1"><g><g><path fill="#55b262" d="M162.2,80.4v3.4c-9.8,3.2-17.1,9.4-21.2,18.1V80.4H162.2z"/><path fill="#55b262" d="M159,164.2c1,0.8,2.1,1.6,3.2,2.4v16.8H141v-41.2C144.5,150.3,150.3,157.3,159,164.2z"/><path fill="#1a4170" d="M156.8,53.8h4.9v19.4h-20.5V69C141.2,60.6,148.2,53.8,156.8,53.8z"/><path fill="#1a4170" d="M187.7,88.2c-3-0.6-6.3-0.9-9.9-0.9c-3,0-5.9,0.2-8.5,0.7c-18.2,3-28,16.2-28,35.4c0,15.1,4.8,25.8,19.7,37.3 c2.5,1.9,5.2,3.8,8.2,5.8c0.1,0.1,0.2,0.1,0.3,0.2c2,1.3,3.9,2.6,5.6,3.8l-5.4-33c-0.2-0.2-0.4-0.4-0.5-0.5 c-0.1-0.1-0.1-0.1-0.2-0.2c-1.3-1.5-2.3-2.9-3-4.4c-1.5-2.9-2.1-6.1-2.1-9.8c0-6,1.9-10.4,5.3-12.9c2.3-1.7,5.2-2.6,8.7-2.6 c4.1,0,7.3,1.1,9.7,3.2c3,2.7,4.6,7.1,4.6,12.9v5.4h21.5v-4.8C213.7,104.5,205,91.6,187.7,88.2z M183,210.9 c-1.7,0.6-3.7,0.9-5.8,0.9c-2.7,0-5.1-0.5-7.1-1.4c-0.3-0.1-0.5-0.2-0.8-0.4c-4.5-2.4-6.9-7.3-6.9-14.1v-7.8h-21.5v7 c0,22.5,12.4,36.5,36.5,36.5c3.2,0,6.1-0.2,8.9-0.7L183,210.9z"/><g><path fill="#1a4170" d="M174.6,140.5h14l11.1,71.9l11.3-71.9h12.9l-12.3,71.1c-1.9,11-11,19-21.5,19h0L174.6,140.5z"/></g></g></g><path fill="#1a4170" d="M306.4,198.7c-6.1-10.3-9-22.3-7.8-34.2c2.5-25.1-2.8-51.2-16.6-74.5c-11.4-19.3-27.3-34.3-45.6-44.5 c-2.1-0.7-4.1-1.4-6.1-2.4C207.4,32.6,181,29,154.4,34.4c-34.1,7-61.9,27.4-79.2,54.6c-8.3,13.1-14.2,27.9-17.1,43.4 c-2.8,15.1-2.8,31.1,0.5,47.1c7.1,34.7,28.4,63,56.5,80.2c-8.4,1-18,0.1-28.7-2.5c-19.8-17.9-34.7-41.7-41.5-69.3 C26.2,111.4,75,35.1,151.4,19.5c27-5.5,53.7-2.7,77.7,6.6c0.5,0.2,1,0.4,1.5,0.6c7.7,3.1,15.2,6.9,22.2,11.4c0.3,0.2,0.7,0.4,1,0.6 c3.9,2.5,7.6,5.3,11.3,8.3c11.6,9.5,21.8,21.3,30.1,35.3C316.7,118.8,319.5,161.5,306.4,198.7z"/><g fill="#55b262"><path d="M91.7,267.2c11.2,8.5,31.5,21.6,59.9,28c8.4,1.9,23.8,6.2,43.5,3.3c8.7-1.3,39.1-4.2,66-26.2 c15.2-12.4,24.9-27.1,32.8-39.1c4.8-7.3,8.5-13.8,10.9-18.5c-1.2-0.7-3.3-1.7-6.1-1.9c-6.5-0.5-11.8,3.9-14.7,6.4 c-16.1,14.1-20.5,23.8-34.9,34.7c-5.5,4.2-10.1,6.8-11.7,7.7c-13.5,7.4-26.3,9.6-34.7,10.3c-1.3,0-16.3-0.1-18.8-7.1 c-3-8.4,17.4-9,27.7-10.8c10.2-1.9,22.4-3.9,26.3-12.7c-8.7-1.3-20.5-2.1-34.3-0.1c-7.1,1-17.7,3.3-29.5,8.5 c-14.5,6.4-18.5,11.7-26.8,16.2C136.9,271.5,120,275.6,91.7,267.2"/><path d="M253.3,245.6c-7.9-23.5,6.2-34.8,6.2-34.8l2.6,17"/><path d="M279.8,218.1l4.7-25.8c0,0-13.9,4.1-17.1,19.6c-3.2,15.4-4,23.2-4,23.2C266.9,233.2,279.8,218.1,279.8,218.1z"/></g><text transform="translate(348.273 127.045)"><tspan x="0" fill="#1a4170" y="0" font-size="58.643" font-family="BaskOldFace">INSTITUTO</tspan><tspan x="0" fill="#1a4170" y="96" font-size="95.961" font-family="BaskOldFace">SÃO VICENTE</tspan></text></svg></button>
+    <div class="toplinks">
+      
+    </div>
+  </header>
+  <main id="view"></main>
+  <footer>Instituto São Vicente — Setor de Educação Permanente · <a href="#painel">Painel</a></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+"use strict";
+var SN=["Sim","Não"];
+var SOFT=["Comunicação","Trabalho em equipe","Gestão do tempo","Proatividade","Relacionamento interpessoal"];
+var SURVEYS={
+ est:{
+  nome:"Aprendizes", titulo:"Pesquisa de Perfil e", titulo2:"Necessidades de Desenvolvimento",
+  sub:"Direcionada aos aprendizes",
+  intro:"Esta pesquisa tem como objetivo conhecer melhor o perfil acadêmico dos aprendizes e identificar temas em que você sente dificuldade, para que o Setor de Educação Permanente possa oferecer treinamentos que contribuam com o seu desempenho no trabalho. Não é necessário se identificar, caso prefira responder anonimamente.",
+  aviso:"As respostas são usadas apenas pelo Setor de Educação Permanente para planejar treinamentos.",
+  steps:[
+   {t:"Identificação",f:[
+    {id:"nome",type:"text",label:"Nome",req:false},
+    {id:"setor",type:"text",label:"Setor onde atua no escritório",req:true}]},
+   {t:"Bloco 1 — Perfil acadêmico",f:[
+    {id:"q1",n:1,type:"single",label:"Você está cursando ensino superior atualmente?",opts:SN,req:true},
+    {id:"q2",n:2,type:"text",label:"Qual curso e instituição de ensino?",req:true,showIf:["q1","Sim"]},
+    {id:"q3",n:3,type:"text",label:"Qual período/semestre você está cursando?",req:true,showIf:["q1","Sim"]},
+    {id:"q4",n:4,type:"single",label:"Qual o turno da faculdade?",opts:["Manhã","Tarde","Noite","EAD"],req:true,showIf:["q1","Sim"]}]},
+   {t:"Bloco 2 — Rotina de trabalho",f:[
+    {id:"q5",n:5,type:"single",label:"Qual o turno em que você trabalha no escritório?",opts:["Manhã","Tarde","Integral"],req:true},
+    {id:"q6",n:6,type:"text",label:"Há quanto tempo você está no ISV como aprendiz?",req:true},
+    {id:"q7",n:7,type:"textarea",label:"Quais atividades você realiza no dia a dia? (breve descrição)",req:true}]},
+   {t:"Bloco 3 — Autoavaliação e desenvolvimento",f:[
+    {id:"q8",n:8,type:"multi",label:"Em quais temas ou habilidades você sente mais dificuldade no seu dia a dia de trabalho?",hint:"marque quantos desejar",
+      opts:["Comunicação","Atendimento","Redação de documentos/e-mails","Uso de sistemas ou planilhas","Organização e gestão do tempo","Postura profissional","Trabalho em equipe","Ética e sigilo profissional"],other:true},
+    {id:"q9",n:9,type:"textarea",label:"Você já participou de algum treinamento oferecido pela instituição? Qual e como avalia?"},
+    {id:"q10",n:10,type:"textarea",label:"Que tipo de treinamento você acredita que ajudaria a melhorar seu desempenho no trabalho?"},
+    {id:"q11",n:11,type:"single",label:"Você se sente à vontade para tirar dúvidas com seu coordenador/supervisor no dia a dia?",opts:["Sim, totalmente","Parcialmente","Não"],req:true},
+    {id:"q12",n:12,type:"single",label:"Você pretende crescer profissionalmente dentro do ISV?",opts:SN,req:true},
+    {id:"q13",n:13,type:"textarea",label:"Sugestões ou observações",destaque:"Este é o espaço mais importante da pesquisa. Conte, com suas palavras, o que poderia melhorar no seu dia a dia e o que você gostaria de aprender. Suas sugestões orientam diretamente a escolha dos próximos treinamentos."}]}
+  ],
+  kpis:function(R){return [
+    ["Respostas",R.length],
+    ["Cursando ensino superior",pct(R,"q1","Sim")],
+    ["Pretendem crescer no ISV",pct(R,"q12","Sim")],
+    ["Totalmente à vontade com o supervisor",pct(R,"q11","Sim, totalmente")]];}
+ },
+ coord:{
+  nome:"Coordenadores", titulo:"Pesquisa de", titulo2:"Necessidades de Treinamento",
+  sub:"Direcionada aos coordenadores — equipe e aprendizes",
+  intro:"Esta pesquisa tem como objetivo identificar as necessidades de capacitação das equipes sob sua coordenação, incluindo os aprendizes, para orientar o planejamento de treinamentos do Setor de Educação Permanente. Pedimos que responda com atenção e franqueza; as informações serão utilizadas exclusivamente para fins de planejamento pedagógico.",
+  steps:[
+   {t:"Identificação",f:[
+    {id:"nome",type:"text",label:"Nome do(a) coordenador(a)",req:true},
+    {id:"setor",type:"text",label:"Setor/área",req:true},
+    {id:"efetivos",type:"number",label:"Nº de colaboradores efetivos sob sua coordenação",req:true},
+    {id:"aprendizes",type:"number",label:"Nº de jovens aprendizes e assistentes sob sua coordenação",req:true}]},
+   {t:"Bloco 1 — Percepção geral da equipe",f:[
+    {id:"q1",n:1,type:"scale",label:"Em uma escala de 1 a 5, como você avalia o nível técnico da sua equipe nas atividades do dia a dia?",lo:"1 = muito baixo",hi:"5 = muito alto",req:true},
+    {id:"q2",n:2,type:"textarea",label:"Quais são as principais dificuldades técnicas observadas na equipe atualmente?",req:true},
+    {id:"q3",n:3,type:"multi",label:"Quais competências comportamentais (soft skills) você identifica como pontos de melhoria?",hint:"marque quantas desejar",opts:SOFT,other:true},
+    {id:"q4",n:4,type:"multi",label:"Quais competências comportamentais (soft skills) você identifica como pontos fortes dos seus liderados?",hint:"marque quantas desejar",opts:SOFT,other:true},
+    {id:"q5",n:5,type:"textarea",label:"Houve alguma situação recente que evidenciou a necessidade de capacitação? Se sim, descreva brevemente."},
+    {id:"neuro",n:6,type:"single",label:"Há, na sua equipe, jovem aprendiz ou colaborador com diagnóstico de TEA, TDAH ou outra condição relacionada?",hint:"não cite nomes",opts:["Sim","Não","Não sei informar"],req:true}]},
+   {t:"Bloco 2 — Jovens aprendizes (postura profissional)",f:[
+    {id:"q6",n:7,type:"scale",label:"Como você avalia, de forma geral, a postura profissional dos jovens aprendizes sob sua coordenação?",lo:"1 = muito ruim",hi:"5 = excelente",req:true},
+    {id:"q7",n:8,type:"multi",label:"Quais comportamentos você gostaria de reforçar por meio de treinamento?",hint:"marque quantos desejar",
+      opts:["Pontualidade e assiduidade","Uso de linguagem adequada","Postura em reuniões","Uso do celular no ambiente de trabalho","Vestimenta / apresentação pessoal","Ética e sigilo profissional","Relacionamento interpessoal"],other:true},
+    {id:"q8",n:9,type:"textarea",label:"Já presenciou ou recebeu alguma situação relacionada à conduta/profissionalismo de aprendizes que gostaria de relatar?",hint:"não é necessário citar nomes"},
+    {id:"q9",n:10,type:"single",label:"Na sua percepção, os aprendizes recebem orientação suficiente sobre normas e cultura da instituição no momento da admissão?",opts:["Sim, suficiente","Parcialmente suficiente","Não, é insuficiente"],req:true}]},
+   {t:"Bloco 3 — Prioridades de capacitação",f:[
+    {id:"q10",n:11,type:"multi",label:"Quais temas você considera prioritários para a equipe nos próximos 6 meses?",hint:"marque quantos desejar",req:true,
+      opts:["Atendimento e humanização","Comunicação assertiva","Trabalho em equipe","Gestão de conflitos","Ética e sigilo profissional","Normas internas e segurança do trabalho","Postura profissional para aprendizes"],other:true},
+    {id:"q11",n:12,type:"multi",label:"Há necessidade de capacitação técnica? (ferramentas e sistemas do setor)",hint:"marque quantas desejar",
+      opts:["Ferramentas de IA","Sistemas utilizados no ISV (Omie)","Excel e outros programas do Office ou similares"],other:true},
+    {id:"q12",n:13,type:"single",label:"Qual formato de treinamento você considera mais eficaz para sua equipe?",opts:["Presencial","Online","Workshop prático","Palestra"],req:true},
+    {id:"q13",n:14,type:"textarea",label:"Sugestão de tema, profissional ou instituição para ministrar o treinamento"},
+    {id:"q14",n:15,type:"textarea",label:"Comentários adicionais",destaque:"Este é o espaço mais importante da pesquisa. Registre o que as perguntas anteriores não cobriram: necessidades da equipe, situações que merecem atenção e sugestões para a Educação Permanente. Seus comentários orientam diretamente o planejamento dos treinamentos."}]}
+  ],
+  kpis:function(R){return [
+    ["Respostas",R.length],
+    ["Média do nível técnico",avg(R,"q1")],
+    ["Média da postura dos aprendizes",avg(R,"q6")],
+    ["Efetivos / aprendizes cobertos",sum(R,"efetivos")+" / "+sum(R,"aprendizes")]];}
+ }
+};
+
+/* ---------- utilidades ---------- */
+function $(s){return document.querySelector(s);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function pct(R,id,v){var n=R.filter(function(x){return x.r[id]!=null&&x.r[id]!=="";}).length;if(!n)return "—";
+  return Math.round(100*R.filter(function(x){return x.r[id]===v;}).length/n)+"%";}
+function avg(R,id){var v=R.map(function(x){return Number(x.r[id]);}).filter(function(n){return n>0;});if(!v.length)return "—";
+  return (v.reduce(function(a,b){return a+b;},0)/v.length).toFixed(1).replace(".",",");}
+function sum(R,id){return R.reduce(function(a,x){return a+(Number(x.r[id])||0);},0);}
+function fields(key){var out=[];SURVEYS[key].steps.forEach(function(s){s.f.forEach(function(f){out.push(f);});});return out;}
+function qLabel(f){return (f.n?f.n+". ":"")+f.label;}
+function fmtDate(ts){try{return new Date(ts).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}catch(e){return ts||"";}}
+
+/* ---------- servidor (Google Apps Script) ---------- */
+/* Cole abaixo a URL do aplicativo da web gerada na implantação do Apps Script. */
+var API_URL="COLE_AQUI_A_URL_DO_APPS_SCRIPT";
+function configured(){return /^https:\/\/script\.google\.com\//.test(API_URL);}
+async function api(body){
+  if(!configured())throw new Error("config");
+  var res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});
+  var j=await res.json();
+  if(!j||!j.ok)throw new Error((j&&j.erro)||"falha");
+  return j;
+}
+function newId(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return "r-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,12);
+}
+var senha="";try{senha=sessionStorage.getItem("isv_painel")||"";}catch(e){}
+function setSenha(v){senha=v;try{if(v)sessionStorage.setItem("isv_painel",v);else sessionStorage.removeItem("isv_painel");}catch(e){}}
+
+/* ---------- estado ---------- */
+var S={view:"home",key:null,step:0,ans:{},sending:false,tab:"est",setor:"",rows:[],loaded:false,loading:false,loadErr:"",loginErr:"",docId:null};
+var view=$("#view"),wrap=$("#wrap");
+
+function go(v,opts){S.view=v;Object.assign(S,opts||{});wrap.classList.toggle("wide",v==="painel");render();window.scrollTo(0,0);}
+function render(){
+  if(S.view==="home")return renderHome();
+  if(S.view==="intro")return renderIntro();
+  if(S.view==="form")return renderForm();
+  if(S.view==="done")return renderDone();
+  if(S.view==="painel")return renderPainel();
+}
+
+/* ---------- início ---------- */
+function renderHome(){
+  view.innerHTML='<div class="stack" style="gap:28px"><section class="hero">'+
+   '<p class="eyebrow">Setor de Educação Permanente</p>'+
+   '<h1>Pesquisas de <em>Necessidades de Treinamento</em></h1>'+
+   '<p class="lead">Escolha a pesquisa que corresponde à sua função. Leva cerca de 5 minutos e ajuda a definir os próximos treinamentos do Instituto São Vicente.</p>'+
+   '<hr class="rule"><div class="shapes" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div></section>'+
+   '<div class="cards">'+
+    '<section class="card"><p class="eyebrow">Para aprendizes</p><h3>Perfil e Necessidades de Desenvolvimento</h3>'+
+     '<p>13 perguntas sobre perfil acadêmico, rotina de trabalho e temas em que você gostaria de apoio. Pode ser anônima.</p>'+
+     '<button class="btn" type="button" data-open="est">Responder como aprendiz</button></section>'+
+    '<section class="card c2"><p class="eyebrow">Para coordenadores</p><h3>Necessidades de Treinamento</h3>'+
+     '<p>15 perguntas sobre a equipe, os jovens aprendizes e as prioridades de capacitação dos próximos 6 meses.</p>'+
+     '<button class="btn" type="button" data-open="coord">Responder como coordenador</button></section>'+
+   '</div></div>';
+}
+function renderIntro(){
+  var sv=SURVEYS[S.key];
+  view.innerHTML='<section class="stack">'+
+   '<p class="eyebrow">Setor de Educação Permanente</p>'+
+   '<h1>'+esc(sv.titulo)+' <em>'+esc(sv.titulo2)+'</em></h1>'+
+   '<p class="eyebrow" style="color:var(--ink2)">'+esc(sv.sub)+'</p><hr class="rule">'+
+   '<p class="lead">'+esc(sv.intro)+'</p>'+
+   (sv.aviso?'<p class="note">'+esc(sv.aviso)+'</p>':'')+
+   '<div class="actions"><button class="btn ghost" type="button" data-home>Voltar</button>'+
+   '<button class="btn" type="button" data-start>Iniciar pesquisa</button></div></section>';
+}
+
+/* ---------- formulário ---------- */
+function visible(f){return !f.showIf||S.ans[f.showIf[0]]===f.showIf[1];}
+function fieldHTML(f){
+  var v=S.ans[f.id],id="f_"+f.id,h="";
+  var tag=(f.hint?' <span class="opt">('+esc(f.hint)+')</span>':'')+((f.req||f.destaque)?'':' <span class="opt">— opcional</span>');
+  var lab=esc(qLabel(f))+tag;
+  if(f.type==="text"||f.type==="number"||f.type==="textarea"){
+    h='<div class="field'+(f.destaque?' key':'')+'" data-f="'+f.id+'">'+(f.destaque?'<p class="eyebrow">Pergunta mais importante</p>':'')+'<label for="'+id+'">'+lab+'</label>'+(f.destaque?'<p class="why">'+esc(f.destaque)+'</p>':'');
+    if(f.type==="textarea")h+='<textarea id="'+id+'" maxlength="2000">'+esc(v)+'</textarea>';
+    else if(f.type==="number")h+='<input id="'+id+'" type="number" min="0" step="1" inputmode="numeric" value="'+esc(v)+'">';
+    else h+='<input id="'+id+'" type="text" maxlength="200" value="'+esc(v)+'">';
+    return h+'<span class="err" hidden></span></div>';
+  }
+  h='<fieldset class="field" data-f="'+f.id+'"><legend>'+lab+'</legend>';
+  if(f.type==="scale"){
+    h+='<div class="scale">';
+    for(var i=1;i<=5;i++)h+='<label><input type="radio" name="'+id+'" id="'+id+'_'+i+'" value="'+i+'"'+(Number(v)===i?" checked":"")+'>'+i+'</label>';
+    h+='</div><div class="legend"><span>'+esc(f.lo)+'</span><span>'+esc(f.hi)+'</span></div>';
+  }else{
+    var multi=f.type==="multi",arr=multi?(v||[]):[v];
+    h+='<div class="choices">';
+    var opts=f.opts.concat(f.other?["Outro"]:[]);
+    opts.forEach(function(o,i){
+      h+='<label class="choice"><input type="'+(multi?"checkbox":"radio")+'" name="'+id+'" id="'+id+'_'+i+'" value="'+esc(o)+'"'+(arr.indexOf(o)>=0?" checked":"")+'><span>'+esc(o)+'</span></label>';
+    });
+    h+='</div>';
+    if(f.other)h+='<input type="text" id="'+id+'_outro" maxlength="200" placeholder="Qual?" aria-label="Outro — especifique" value="'+esc(S.ans[f.id+"_outro"])+'"'+(arr.indexOf("Outro")>=0?"":" hidden")+'>';
+  }
+  return h+'<span class="err" hidden></span></fieldset>';
+}
+function renderForm(){
+  var sv=SURVEYS[S.key],st=sv.steps[S.step],n=sv.steps.length,last=S.step===n-1;
+  view.innerHTML='<section class="stack" style="gap:22px">'+
+   '<div class="progress"><p class="eyebrow">'+esc(sv.nome)+' · etapa '+(S.step+1)+' de '+n+'</p>'+
+   '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+n+'" aria-valuenow="'+(S.step+1)+'"><i style="width:'+Math.round(100*(S.step+1)/n)+'%"></i></div></div>'+
+   '<h2>'+esc(st.t)+'</h2>'+
+   '<form id="frm" novalidate>'+st.f.map(fieldHTML).join("")+
+   '<p class="err" id="sendErr" hidden></p>'+
+   '<div class="actions"><button class="btn ghost" type="button" data-back>Voltar</button>'+
+   '<button class="btn" type="submit" id="btnNext">'+(last?"Enviar respostas":"Avançar")+'</button></div></form></section>';
+  applyVisibility();
+}
+function collect(){
+  SURVEYS[S.key].steps[S.step].f.forEach(function(f){
+    var id="f_"+f.id;
+    if(f.type==="text"||f.type==="textarea")S.ans[f.id]=$("#"+id).value.trim();
+    else if(f.type==="number"){var t=$("#"+id).value.trim();S.ans[f.id]=t===""?"":Number(t);}
+    else if(f.type==="multi"){
+      S.ans[f.id]=Array.prototype.map.call(document.querySelectorAll('input[name="'+id+'"]:checked'),function(e){return e.value;});
+      if(f.other)S.ans[f.id+"_outro"]=S.ans[f.id].indexOf("Outro")>=0?$("#"+id+"_outro").value.trim():"";
+    }else{var c=document.querySelector('input[name="'+id+'"]:checked');S.ans[f.id]=c?(f.type==="scale"?Number(c.value):c.value):"";}
+  });
+}
+function applyVisibility(){
+  SURVEYS[S.key].steps[S.step].f.forEach(function(f){
+    var el=document.querySelector('[data-f="'+f.id+'"]');if(!el)return;
+    el.hidden=!visible(f);
+    if(f.other){var o=$("#f_"+f.id+"_outro"),on=(S.ans[f.id]||[]).indexOf("Outro")>=0;o.hidden=!on;}
+  });
+}
+function validate(){
+  var first=null;
+  SURVEYS[S.key].steps[S.step].f.forEach(function(f){
+    var el=document.querySelector('[data-f="'+f.id+'"]'),err=el.querySelector(".err"),v=S.ans[f.id],msg="";
+    if(visible(f)){
+      var emptyV=v===""||v==null||(Array.isArray(v)&&!v.length);
+      if(f.req&&emptyV)msg=f.type==="multi"?"Marque ao menos uma opção.":(f.type==="single"||f.type==="scale")?"Escolha uma opção.":"Preencha este campo.";
+      else if(f.type==="number"&&v!==""&&(!Number.isInteger(v)||v<0))msg="Informe um número inteiro, a partir de 0.";
+      else if(f.other&&(v||[]).indexOf("Outro")>=0&&!S.ans[f.id+"_outro"])msg="Descreva o que você marcou como “Outro”.";
+    }else{ S.ans[f.id]=f.type==="multi"?[]:""; }
+    err.textContent=msg;err.hidden=!msg;el.classList.toggle("bad",!!msg);
+    if(msg&&!first)first=el;
+  });
+  if(first){first.scrollIntoView({block:"center",behavior:"auto"});var i=first.querySelector("input,textarea");if(i)i.focus({preventScroll:true});}
+  return !first;
+}
+async function submit(){
+  if(S.sending)return;
+  S.sending=true;var b=$("#btnNext"),err=$("#sendErr");b.disabled=true;b.textContent="Enviando…";err.hidden=true;
+  if(!S.docId)S.docId=newId();
+  try{
+    await api({acao:"enviar",id:S.docId,s:S.key,r:S.ans});
+    S.sending=false;go("done",{ans:{},step:0,docId:null});
+  }catch(e){
+    S.sending=false;b.disabled=false;b.textContent="Enviar respostas";
+    err.textContent=e.message==="config"?"A pesquisa ainda não foi ligada à planilha. Avise o Setor de Educação Permanente.":
+      "Não foi possível enviar. Verifique sua conexão e toque em “Enviar respostas” de novo; o que você preencheu continua aqui.";
+    err.hidden=false;
+  }
+}
+function renderDone(){
+  view.innerHTML='<section class="stack"><p class="eyebrow">Resposta registrada</p><h1>Obrigado por <em>participar!</em></h1><hr class="rule">'+
+   '<p class="lead">Suas respostas ajudarão o Setor de Educação Permanente a planejar os próximos treinamentos.</p>'+
+   '<div class="actions"><button class="btn ghost" type="button" data-home>Voltar ao início</button>'+
+   '<button class="btn" type="button" data-open="'+S.key+'">Registrar nova resposta</button></div></section>';
+}
+
+/* ---------- painel ---------- */
+async function loadAll(){
+  if(S.loading)return;
+  S.loading=true;S.loadErr="";S.loginErr="";renderIfPainel();
+  try{
+    var j=await api({acao:"listar",senha:senha});
+    S.rows=(j.respostas||[]).filter(function(x){return x&&SURVEYS[x.s]&&x.r;}).sort(function(a,b){return a.ts<b.ts?1:-1;});
+    S.loaded=true;
+  }catch(e){
+    if(e.message==="senha"){setSenha("");S.loaded=false;S.loginErr="Senha incorreta.";}
+    else S.loadErr=e.message==="config"?"O painel ainda não foi ligado à planilha (falta a URL do Apps Script no index.html).":"Não foi possível carregar as respostas. Tente atualizar.";
+  }
+  S.loading=false;renderIfPainel();
+}
+function renderIfPainel(){if(S.view==="painel")renderPainel();}
+function barsHTML(counts,total){
+  var max=Math.max.apply(null,counts.map(function(c){return c[1];}).concat([1]));
+  return '<div class="bars">'+counts.map(function(c){
+    return '<span class="lab">'+esc(c[0])+'</span><span class="trk"><i style="width:'+(100*c[1]/max)+'%"></i></span>'+
+     '<span class="val">'+c[1]+(total?' · '+Math.round(100*c[1]/total)+'%':'')+'</span>';}).join("")+'</div>';
+}
+function questionHTML(f,R){
+  var vals=R.map(function(x){return x.r[f.id];});
+  var answered=vals.filter(function(v){return !(v===""||v==null||(Array.isArray(v)&&!v.length));});
+  var h='<section class="q"><h3>'+esc(qLabel(f))+'</h3>';
+  if(!answered.length)return h+'<p class="meta">Sem respostas.</p></section>';
+  if(f.type==="single"||f.type==="multi"||f.type==="scale"){
+    var opts=f.type==="scale"?[1,2,3,4,5]:f.opts.concat(f.other?["Outro"]:[]);
+    var counts=opts.map(function(o){return [String(o),answered.filter(function(v){return Array.isArray(v)?v.indexOf(o)>=0:v===o;}).length];});
+    if(f.type==="multi")counts.sort(function(a,b){return b[1]-a[1];});
+    h+='<p class="meta">'+answered.length+' resposta(s)'+(f.type==="scale"?' · média '+avg(R,f.id)+' · '+esc(f.lo)+', '+esc(f.hi):'')+'</p>'+barsHTML(counts,answered.length);
+    if(f.other){var outros=R.map(function(x){return x.r[f.id+"_outro"];}).filter(Boolean);
+      if(outros.length)h+='<ul class="quotes">'+outros.map(function(o){return '<li><small>Outro</small>'+esc(o)+'</li>';}).join("")+'</ul>';}
+  }else if(f.type==="number"){
+    h+='<p class="meta">'+answered.length+' resposta(s) · total '+sum(R,f.id)+'</p>';
+  }else if(f.id==="setor"){
+    var m={};answered.forEach(function(v){m[v]=(m[v]||0)+1;});
+    h+=barsHTML(Object.keys(m).map(function(k){return [k,m[k]];}).sort(function(a,b){return b[1]-a[1];}),answered.length);
+  }else if(f.id!=="nome"){
+    h+='<p class="meta">'+answered.length+' resposta(s)</p><ul class="quotes">'+R.filter(function(x){return x.r[f.id];}).map(function(x){
+      return '<li>'+esc(x.r[f.id])+'<small>'+esc(x.r.setor||"")+'</small></li>';}).join("")+'</ul>';
+  }else return "";
+  return h+'</section>';
+}
+function showVal(f,r){var v=r[f.id];if(Array.isArray(v)){v=v.map(function(o){return o==="Outro"&&r[f.id+"_outro"]?"Outro: "+r[f.id+"_outro"]:o;}).join("; ");}return (v===""||v==null)?"":String(v);}
+function renderPainel(){
+  if(!senha){
+    view.innerHTML='<section class="stack" style="max-width:420px"><p class="eyebrow">Painel de respostas</p><h2>Acesso restrito</h2>'+
+     '<form id="frmLogin" novalidate><div class="field"><label for="senhaPainel">Senha do painel</label>'+
+     '<input id="senhaPainel" type="password" autocomplete="current-password">'+
+     '<span class="err"'+(S.loginErr?'':' hidden')+'>'+esc(S.loginErr)+'</span></div>'+
+     '<div><button class="btn" type="submit">Entrar</button></div></form></section>';
+    return;
+  }
+  if(!S.loaded&&!S.loading&&!S.loadErr){loadAll();return;}
+  var all=S.rows.filter(function(x){return x.s===S.tab;});
+  var setores=Array.from(new Set(all.map(function(x){return x.r.setor;}).filter(Boolean))).sort();
+  if(setores.indexOf(S.setor)<0)S.setor="";
+  var R=S.setor?all.filter(function(x){return x.r.setor===S.setor;}):all;
+  var sv=SURVEYS[S.tab],fs=fields(S.tab);
+  var h='<div class="stack" style="gap:22px"><div class="stack" style="gap:8px"><p class="eyebrow">Painel de respostas</p><h2>'+esc(sv.titulo+" "+sv.titulo2)+'</h2></div>'+
+   '<div class="toolbar"><div class="tabs" role="tablist">'+Object.keys(SURVEYS).map(function(k){
+     return '<button class="tab" role="tab" type="button" data-tab="'+k+'" aria-selected="'+(k===S.tab)+'">'+esc(SURVEYS[k].nome)+' ('+S.rows.filter(function(x){return x.s===k;}).length+')</button>';}).join("")+'</div>'+
+   '<div class="toplinks"><button class="btn ghost small" type="button" id="btnReload"'+(S.loading?" disabled":"")+'>'+(S.loading?"Atualizando…":"Atualizar")+'</button>'+
+   (window.XLSX?'<button class="btn small" type="button" id="btnXlsx"'+(S.rows.length?"":" disabled")+'>Exportar Excel</button>':'')+
+   '<button class="btn ghost small" type="button" id="btnSair">Sair</button></div></div>';
+  if(S.loadErr)h+='<p class="note">'+esc(S.loadErr)+'</p>';
+  if(!S.loaded)h+=S.loadErr?'':'<div class="empty">Carregando respostas…</div>';
+  else if(!all.length)h+='<div class="empty"><h3>Nenhuma resposta ainda</h3><p>As respostas da pesquisa de '+esc(sv.nome.toLowerCase())+' aparecem aqui assim que forem enviadas, com gráficos por pergunta e a lista individual.</p></div>';
+  else{
+    h+='<div class="toolbar"><label>Setor: <select id="selSetor"><option value="">Todos</option>'+setores.map(function(s){
+      return '<option'+(s===S.setor?" selected":"")+'>'+esc(s)+'</option>';}).join("")+'</select></label><span class="meta" style="color:var(--muted)">'+R.length+' de '+all.length+' resposta(s)</span></div>'+
+     '<div class="kpis">'+sv.kpis(R).map(function(k){return '<div class="kpi"><b>'+esc(k[1])+'</b><span>'+esc(k[0])+'</span></div>';}).join("")+'</div>'+
+     '<div>'+fs.map(function(f){return questionHTML(f,R);}).join("")+'</div>'+
+     '<div class="stack"><h2>Respostas individuais</h2><div class="list">'+R.map(function(x){
+       return '<details class="resp"><summary>'+esc(fmtDate(x.ts))+' · '+esc(x.r.setor||"sem setor")+' · '+esc(x.r.nome||"anônimo")+'</summary><dl>'+
+        fs.map(function(f){var v=showVal(f,x.r);return v?'<div><dt>'+esc(qLabel(f))+'</dt><dd>'+esc(v)+'</dd></div>':"";}).join("")+
+        '<div><button class="btn danger small" type="button" data-del="'+esc(x.id)+'" data-s="'+esc(x.s)+'">Excluir resposta</button></div></dl></details>';}).join("")+'</div></div>';
+  }
+  view.innerHTML=h+'</div>';
+}
+function exportXlsx(){
+  var wb=XLSX.utils.book_new();
+  Object.keys(SURVEYS).forEach(function(k){
+    var fs=fields(k),head=["Data"].concat(fs.map(qLabel));
+    var rows=S.rows.filter(function(x){return x.s===k;}).map(function(x){return [fmtDate(x.ts)].concat(fs.map(function(f){
+      var v=x.r[f.id];return (f.type==="number"||f.type==="scale")&&v!==""&&v!=null?Number(v):showVal(f,x.r);}));});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([head].concat(rows)),SURVEYS[k].nome);
+  });
+  XLSX.writeFile(wb,"pesquisas-treinamento-isv.xlsx");
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",async function(e){
+  var t=e.target.closest("button");if(!t)return;
+  if(t.id==="logo"||t.hasAttribute("data-home")){if(location.hash)history.replaceState(null,"",location.pathname);return go("home",{ans:{},step:0,docId:null});}
+  if(t.dataset.open)return go("intro",{key:t.dataset.open,ans:{},step:0,docId:null});
+  if(t.hasAttribute("data-start"))return go("form",{step:0});
+  if(t.hasAttribute("data-back")){collect();return S.step===0?go("intro"):go("form",{step:S.step-1});}
+  if(t.dataset.tab){S.tab=t.dataset.tab;S.setor="";return renderPainel();}
+  if(t.id==="btnXlsx")return exportXlsx();
+  if(t.id==="btnReload"){S.loadErr="";return loadAll();}
+  if(t.id==="btnSair"){setSenha("");S.rows=[];S.loaded=false;S.loadErr="";return renderPainel();}
+  if(t.dataset.del){
+    if(!t.dataset.sure){t.dataset.sure="1";t.textContent="Confirmar exclusão";return;}
+    t.disabled=true;var id=t.dataset.del;
+    try{await api({acao:"excluir",senha:senha,s:t.dataset.s,id:id});
+      S.rows=S.rows.filter(function(x){return x.id!==id;});renderPainel();
+    }catch(err){t.disabled=false;t.textContent="Não foi possível excluir";}
+  }
+});
+document.addEventListener("change",function(e){
+  if(e.target.id==="selSetor"){S.setor=e.target.value;return renderPainel();}
+  if(S.view==="form"&&e.target.closest("#frm")){collect();applyVisibility();}
+});
+document.addEventListener("submit",function(e){
+  e.preventDefault();
+  if(e.target.id==="frmLogin"){var v=$("#senhaPainel").value;if(!v)return;setSenha(v);S.loaded=false;S.loadErr="";return loadAll();}
+  if(e.target.id!=="frm")return;
+  collect();
+  if(!validate())return;
+  if(S.step<SURVEYS[S.key].steps.length-1)return go("form",{step:S.step+1});
+  submit();
+});
+
+/* ---------- partida ---------- */
+function route(){
+  var hash=(location.hash||"").replace("#","");
+  if(hash==="aprendizes"||hash==="estagiarios")go("intro",{key:"est",ans:{},step:0,docId:null});
+  else if(hash==="coordenadores")go("intro",{key:"coord",ans:{},step:0,docId:null});
+  else go(hash==="painel"?"painel":"home");
+}
+window.addEventListener("hashchange",route);
+route();
+})();
+</script>
+</body>
+</html>
