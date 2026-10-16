@@ -158,7 +158,7 @@ footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);paddin
   <footer>Instituto São Vicente — Setor de Educação Permanente · <a href="#painel">Painel</a></footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 (function(){
 "use strict";
@@ -251,7 +251,7 @@ function qLabel(f){return (f.n?f.n+". ":"")+f.label;}
 function fmtDate(ts){try{return new Date(ts).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});}catch(e){return ts||"";}}
 
 /* ---------- servidor (Google Apps Script) ---------- */
-/* Cole abaixo a URL do aplicativo da web gerada na implantação do Apps Script. */
+/* URL do aplicativo da web do Apps Script (implantação em appscript/; ver README). */
 var API_URL="https://script.google.com/macros/s/AKfycbwWWiFfz46qE-Vym8pT4gQMrwkGrGPAMSOCuN_UvqwP2JtYpiyNCWdHQfyahu7wpG3amA/exec";
 function configured(){return /^https:\/\/script\.google\.com\//.test(API_URL);}
 async function api(body){
@@ -416,6 +416,7 @@ async function loadAll(){
     S.loaded=true;
   }catch(e){
     if(e.message==="senha"){setSenha("");S.loaded=false;S.loginErr="Senha incorreta.";}
+    else if(e.message==="bloqueado"){setSenha("");S.loaded=false;S.loginErr="Muitas tentativas incorretas. Aguarde 15 minutos e tente de novo.";}
     else S.loadErr=e.message==="config"?"O painel ainda não foi ligado à planilha (falta a URL do Apps Script no index.html).":"Não foi possível carregar as respostas. Tente atualizar.";
   }
   S.loading=false;renderIfPainel();

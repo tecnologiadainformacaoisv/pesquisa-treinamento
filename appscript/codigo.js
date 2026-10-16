@@ -59,16 +59,33 @@ var COLUNAS = {
    [ "q13", "14. Sugestão de tema, profissional ou instituição para ministrar o treinamento" ],
    [ "q14", "15. Comentários adicionais" ] ] };
 
+// Limites de entrada (endpoint público e anônimo)
+var MAX_CORPO = 30000;      // caracteres do corpo da requisição
+var MAX_TEXTO = 2000;       // por resposta de texto (igual ao maxlength do formulário)
+var MAX_ITENS = 20;         // itens por pergunta de múltipla escolha
+var MAX_ITEM = 200;         // caracteres por item
+var MAX_FALHAS = 5;         // tentativas de senha erradas antes do bloqueio
+var BLOQUEIO_S = 900;       // duração do bloqueio / janela de contagem (segundos)
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
-    var b = JSON.parse(e.postData.contents);
+  } catch (err) {
+    console.error("lock: " + err);
+    return json_({ok: false, erro: "ocupado"});
+  }
+  try {
+    var corpo = (e && e.postData && e.postData.contents) || "";
+    if (corpo.length > MAX_CORPO) return json_({ok: false, erro: "dados"});
+    var b = JSON.parse(corpo);
+    if (!b || typeof b !== "object") return json_({ok: false, erro: "dados"});
     if (b.acao === "enviar") return json_(enviar_(b));
     if (b.acao === "listar") return json_(listar_(b));
     if (b.acao === "excluir") return json_(excluir_(b));
     return json_({ok: false, erro: "acao"});
   } catch (err) {
+    console.error(err && err.stack ? err.stack : String(err));
     return json_({ok: false, erro: "falha"});
   } finally {
     try { lock.releaseLock(); } catch (x) {}
@@ -83,9 +100,22 @@ function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function senhaOk_(s) {
+/**
+ * Valida a senha do painel com bloqueio global após MAX_FALHAS erros seguidos
+ * (Apps Script não expõe o IP do chamador, então o limite é global).
+ * Devolve null se a senha está correta, ou o código de erro ("senha" | "bloqueado").
+ */
+function checarSenha_(s) {
+  var cache = CacheService.getScriptCache();
+  var falhas = Number(cache.get("falhas") || 0);
+  if (falhas >= MAX_FALHAS) return "bloqueado";
   var real = PropertiesService.getScriptProperties().getProperty("SENHA_PAINEL");
-  return !!real && s === real;
+  if (real && typeof s === "string" && s === real) {
+    cache.remove("falhas");
+    return null;
+  }
+  cache.put("falhas", String(falhas + 1), BLOQUEIO_S);
+  return "senha";
 }
 
 function cabecalho_(chave) {
@@ -116,8 +146,10 @@ function aba_(chave) {
   var esperado = cabecalho_(chave);
   var sh = ss.getSheetByName(nome);
   if (sh && sh.getLastRow() > 0) {
-    var atual = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 3)).getValues()[0];
-    if (atual[2] !== esperado[2]) {
+    // layout antigo = sem as colunas-chave (a detecção não depende do texto das perguntas,
+    // então editar rótulos à mão não faz a aba "sumir" do painel)
+    var atual = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    if (atual[0] !== "ID" || atual[1] !== "Timestamp" || atual.indexOf("r_json") === -1) {
       sh.setName(nome + " (layout antigo " + Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd-MM HH:mm") + ")");
       sh = null;
     }
@@ -125,71 +157,88 @@ function aba_(chave) {
   if (!sh) sh = ss.getSheetByName(nome) || ss.insertSheet(nome);
   if (sh.getLastRow() === 0) {
     sh.getRange(1, 1, 1, esperado.length).setValues([esperado]);
+    estilo_(sh);
   }
-  estilo_(sh);
   return sh;
 }
 
+/** Aplica o padrão visual às abas existentes (rodar no editor se alguém bagunçar a formatação). */
+function formatarAbas() {
+  Object.keys(ABAS).forEach(function (k) { estilo_(aba_(k)); });
+}
+
+/** Normaliza um valor recebido: só texto/número/lista de textos, com limites de tamanho. */
+function limpar_(v) {
+  if (typeof v === "string") return v.slice(0, MAX_TEXTO);
+  if (typeof v === "number") return isFinite(v) ? v : "";
+  if (Array.isArray(v)) {
+    return v.slice(0, MAX_ITENS)
+      .filter(function (x) { return typeof x === "string"; })
+      .map(function (x) { return x.slice(0, MAX_ITEM); });
+  }
+  return "";
+}
+
 function texto_(v) {
-  if (v == null) return "";
-  if (Array.isArray(v)) return v.map(texto_).join("; ");
-  if (typeof v === "object") return JSON.stringify(v);
-  return String(v);
+  if (Array.isArray(v)) return v.join("; ");
+  return v == null ? "" : String(v);
 }
 
 function enviar_(b) {
-  if (!b.id || !ABAS[b.s] || !b.r || typeof b.r !== "object") return {ok: false, erro: "dados"};
-  var sh = aba_(b.s);
-  var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  if (typeof b.id !== "string" || !/^[\w-]{8,64}$/.test(b.id)) return {ok: false, erro: "dados"};
+  if (!Object.prototype.hasOwnProperty.call(ABAS, b.s)) return {ok: false, erro: "dados"};
+  if (!b.r || typeof b.r !== "object" || Array.isArray(b.r)) return {ok: false, erro: "dados"};
 
-  var ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
-  for (var i = 0; i < ids.length; i++) if (ids[i][0] === b.id) return {ok: true, duplicada: true};
-
-  // chaves fora do esperado viram colunas extras (antes de r_json), para nada se perder
-  var rotulo = {};
-  COLUNAS[b.s].forEach(function (c) { rotulo[c[0]] = c[1]; });
-  var colJson = cab.indexOf("r_json");
-  Object.keys(b.r).forEach(function (k) {
-    var nome = rotulo[k] || k;
-    if (cab.indexOf(nome) === -1) {
-      sh.insertColumnBefore(colJson + 1);
-      sh.getRange(1, colJson + 1).setValue(nome);
-      cab.splice(colJson, 0, nome);
-      colJson++;
-    }
+  // só entram perguntas conhecidas; qualquer outra chave é descartada
+  var r = {}, rotulo = {};
+  COLUNAS[b.s].forEach(function (c) {
+    rotulo[c[0]] = c[1];
+    if (Object.prototype.hasOwnProperty.call(b.r, c[0])) r[c[0]] = limpar_(b.r[c[0]]);
   });
 
+  var sh = aba_(b.s);
+  if (sh.getLastRow() > 1 &&
+      sh.getRange(2, 1, sh.getLastRow() - 1, 1).createTextFinder(b.id).matchEntireCell(true).findNext()) {
+    return {ok: true, duplicada: true};
+  }
+
+  var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var porRotulo = {};
-  Object.keys(b.r).forEach(function (k) { porRotulo[rotulo[k] || k] = b.r[k]; });
+  Object.keys(r).forEach(function (k) { porRotulo[rotulo[k]] = r[k]; });
   var linha = cab.map(function (c) {
     if (c === "ID") return b.id;
     if (c === "Timestamp") return new Date().toISOString();
-    if (c === "r_json") return JSON.stringify(b.r);
+    if (c === "r_json") return JSON.stringify(r);
     return texto_(porRotulo[c]);
   });
-  sh.appendRow(linha);
-  sh.getRange(sh.getLastRow(), 1, 1, linha.length).setVerticalAlignment("top").setWrap(true);
+  // formato "texto simples": nada vira fórmula (=, +, -, @) nem data/número por engano
+  var alvo = sh.getRange(sh.getLastRow() + 1, 1, 1, linha.length);
+  alvo.setNumberFormat("@").setValues([linha]).setVerticalAlignment("top").setWrap(true);
   return {ok: true};
 }
 
 function listar_(b) {
-  if (!senhaOk_(b.senha)) return {ok: false, erro: "senha"};
-  var out = [];
+  var erro = checarSenha_(b.senha);
+  if (erro) return {ok: false, erro: erro};
+  var out = [], ignoradas = 0;
   Object.keys(ABAS).forEach(function (chave) {
     var sh = aba_(chave);
     if (sh.getLastRow() < 2) return;
     var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     var cId = cab.indexOf("ID"), cTs = cab.indexOf("Timestamp"), cJ = cab.indexOf("r_json");
     sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach(function (l) {
-      try { out.push({id: l[cId], s: chave, ts: l[cTs], r: JSON.parse(l[cJ])}); } catch (x) {}
+      try { out.push({id: l[cId], s: chave, ts: l[cTs], r: JSON.parse(l[cJ])}); }
+      catch (x) { ignoradas++; }
     });
   });
+  if (ignoradas) console.warn("linhas ignoradas (r_json inválido): " + ignoradas);
   return {ok: true, respostas: out};
 }
 
 function excluir_(b) {
-  if (!senhaOk_(b.senha)) return {ok: false, erro: "senha"};
-  if (!ABAS[b.s] || !b.id) return {ok: false, erro: "dados"};
+  var erro = checarSenha_(b.senha);
+  if (erro) return {ok: false, erro: erro};
+  if (!Object.prototype.hasOwnProperty.call(ABAS, b.s) || typeof b.id !== "string") return {ok: false, erro: "dados"};
   var sh = aba_(b.s);
   if (sh.getLastRow() < 2) return {ok: true};
   var ids = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
