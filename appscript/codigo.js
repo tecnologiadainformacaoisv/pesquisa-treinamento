@@ -7,13 +7,15 @@
  *   {acao:"excluir", senha, s, id}   -> remove uma resposta
  * Resposta sempre {ok:true,...} ou {ok:false, erro:"..."}; erro "senha" = senha incorreta.
  *
- * Planilha: uma aba por pesquisa (est, coord). Colunas: id | ts | <perguntas, legíveis> | r_json.
+ * Planilha: uma aba por pesquisa (est, coord). Colunas: ID | Timestamp | <perguntas> | r_json.
  * O painel lê apenas r_json (fonte da verdade); as demais colunas são para consulta humana.
  *
  * Configuração: Configurações do projeto > Propriedades do script > SENHA_PAINEL = <senha>.
  */
 var ABAS = {est: "Aprendizes", coord: "Coordenadores"};
-var FIXAS = ["id", "ts"];
+var FIXAS = ["ID", "Timestamp"];
+// Padrão visual das planilhas de resposta do projeto pesquisa-satisfacao.
+var COR_CABECALHO = "#0a3d62";
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -44,6 +46,26 @@ function senhaOk_(s) {
   return !!real && s === real;
 }
 
+function estilo_(sh) {
+  var n = sh.getLastColumn();
+  // migração: cabeçalhos antigos em minúsculas
+  var cab = sh.getRange(1, 1, 1, n).getValues()[0];
+  if (cab[0] === "id") sh.getRange(1, 1).setValue("ID");
+  if (cab[1] === "ts") sh.getRange(1, 2).setValue("Timestamp");
+  sh.getRange(1, 1, 1, n).setFontWeight("bold").setBackground(COR_CABECALHO).setFontColor("#ffffff");
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(1, 160);
+  sh.setColumnWidth(2, 200);
+}
+
+/** Aplica o padrão visual às abas existentes (rodar uma vez no editor, se preciso). */
+function formatarAbas() {
+  Object.keys(ABAS).forEach(function (k) {
+    var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ABAS[k]);
+    if (sh && sh.getLastRow() > 0) estilo_(sh);
+  });
+}
+
 function aba_(chave, colunasPerguntas) {
   var nome = ABAS[chave];
   if (!nome) throw new Error("pesquisa");
@@ -51,8 +73,8 @@ function aba_(chave, colunasPerguntas) {
   var sh = ss.getSheetByName(nome) || ss.insertSheet(nome);
   if (sh.getLastRow() === 0) {
     sh.appendRow(FIXAS.concat(colunasPerguntas || [], ["r_json"]));
-    sh.setFrozenRows(1);
   }
+  estilo_(sh);
   return sh;
 }
 
@@ -83,8 +105,8 @@ function enviar_(b) {
   });
 
   var linha = cab.map(function (c) {
-    if (c === "id") return b.id;
-    if (c === "ts") return new Date().toISOString();
+    if (c === "ID") return b.id;
+    if (c === "Timestamp") return new Date().toISOString();
     if (c === "r_json") return JSON.stringify(b.r);
     return texto_(b.r[c]);
   });
@@ -98,8 +120,9 @@ function listar_(b) {
   Object.keys(ABAS).forEach(function (chave) {
     var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ABAS[chave]);
     if (!sh || sh.getLastRow() < 2) return;
+    estilo_(sh);
     var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-    var cId = cab.indexOf("id"), cTs = cab.indexOf("ts"), cJ = cab.indexOf("r_json");
+    var cId = cab.indexOf("ID"), cTs = cab.indexOf("Timestamp"), cJ = cab.indexOf("r_json");
     sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach(function (l) {
       try { out.push({id: l[cId], s: chave, ts: l[cTs], r: JSON.parse(l[cJ])}); } catch (x) {}
     });
