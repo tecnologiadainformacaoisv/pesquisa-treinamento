@@ -56,6 +56,9 @@ function estilo_(sh) {
   sh.setFrozenRows(1);
   sh.setColumnWidth(1, 160);
   sh.setColumnWidth(2, 200);
+  // r_json é a fonte do painel; oculta para a planilha ficar legível
+  var j = sh.getRange(1, 1, 1, n).getValues()[0].indexOf("r_json");
+  if (j > -1 && !sh.isColumnHiddenByUser(j + 1)) sh.hideColumns(j + 1);
 }
 
 /** Aplica o padrão visual às abas existentes (rodar uma vez no editor, se preciso). */
