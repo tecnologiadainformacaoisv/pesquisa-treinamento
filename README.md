@@ -4,4 +4,5 @@ Página única (HTML/CSS/JS vanilla) de pesquisas de treinamento do Instituto S�
 
 **Deploy:** GitHub Pages (branch `master`, raiz) — https://treinamento.institutosaovicente.com.br/
 
-> `API_URL` em `index.html` ainda é placeholder; colar a URL do Apps Script para habilitar o envio.
+
+**Backend:** Google Apps Script + planilha "Pesquisas de Treinamento ISV" (conta qualidade.isv@gmail.com). Código em `appscript/`; publicar com `clasp push --force` e `clasp deploy` (a senha do painel fica em Propriedades do script, `SENHA_PAINEL`).

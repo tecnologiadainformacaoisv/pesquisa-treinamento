@@ -252,7 +252,7 @@ function fmtDate(ts){try{return new Date(ts).toLocaleString("pt-BR",{dateStyle:"
 
 /* ---------- servidor (Google Apps Script) ---------- */
 /* Cole abaixo a URL do aplicativo da web gerada na implantação do Apps Script. */
-var API_URL="COLE_AQUI_A_URL_DO_APPS_SCRIPT";
+var API_URL="https://script.google.com/macros/s/AKfycbwWWiFfz46qE-Vym8pT4gQMrwkGrGPAMSOCuN_UvqwP2JtYpiyNCWdHQfyahu7wpG3amA/exec";
 function configured(){return /^https:\/\/script\.google\.com\//.test(API_URL);}
 async function api(body){
   if(!configured())throw new Error("config");
