@@ -269,7 +269,7 @@ var senha="";try{senha=sessionStorage.getItem("isv_painel")||"";}catch(e){}
 function setSenha(v){senha=v;try{if(v)sessionStorage.setItem("isv_painel",v);else sessionStorage.removeItem("isv_painel");}catch(e){}}
 
 /* ---------- estado ---------- */
-var S={view:"home",key:null,step:0,ans:{},sending:false,tab:"est",setor:"",rows:[],loaded:false,loading:false,loadErr:"",loginErr:"",docId:null};
+var S={solo:null,view:"home",key:null,step:0,ans:{},sending:false,tab:"est",setor:"",rows:[],loaded:false,loading:false,loadErr:"",loginErr:"",docId:null};
 var view=$("#view"),wrap=$("#wrap");
 
 function go(v,opts){S.view=v;Object.assign(S,opts||{});wrap.classList.toggle("wide",v==="painel");render();window.scrollTo(0,0);}
@@ -305,7 +305,7 @@ function renderIntro(){
    '<p class="eyebrow" style="color:var(--ink2)">'+esc(sv.sub)+'</p><hr class="rule">'+
    '<p class="lead">'+esc(sv.intro)+'</p>'+
    (sv.aviso?'<p class="note">'+esc(sv.aviso)+'</p>':'')+
-   '<div class="actions"><button class="btn ghost" type="button" data-home>Voltar</button>'+
+   '<div class="actions">'+(S.solo?"":'<button class="btn ghost" type="button" data-home>Voltar</button>')+
    '<button class="btn" type="button" data-start>Iniciar pesquisa</button></div></section>';
 }
 
@@ -402,7 +402,7 @@ async function submit(){
 function renderDone(){
   view.innerHTML='<section class="stack"><p class="eyebrow">Resposta registrada</p><h1>Obrigado por <em>participar!</em></h1><hr class="rule">'+
    '<p class="lead">Suas respostas ajudarão o Setor de Educação Permanente a planejar os próximos treinamentos.</p>'+
-   '<div class="actions"><button class="btn ghost" type="button" data-home>Voltar ao início</button>'+
+   '<div class="actions">'+(S.solo?"":'<button class="btn ghost" type="button" data-home>Voltar ao início</button>')+
    '<button class="btn" type="button" data-open="'+S.key+'">Registrar nova resposta</button></div></section>';
 }
 
@@ -502,6 +502,7 @@ function exportXlsx(){
 /* ---------- eventos ---------- */
 document.addEventListener("click",async function(e){
   var t=e.target.closest("button");if(!t)return;
+  if(S.solo&&(t.id==="logo"||t.hasAttribute("data-home")))return go("intro",{key:S.solo,ans:{},step:0,docId:null});
   if(t.id==="logo"||t.hasAttribute("data-home")){if(location.hash)history.replaceState(null,"",location.pathname);return go("home",{ans:{},step:0,docId:null});}
   if(t.dataset.open)return go("intro",{key:t.dataset.open,ans:{},step:0,docId:null});
   if(t.hasAttribute("data-start"))return go("form",{step:0});
@@ -535,8 +536,9 @@ document.addEventListener("submit",function(e){
 /* ---------- partida ---------- */
 function route(){
   var hash=(location.hash||"").replace("#","");
-  if(hash==="aprendizes"||hash==="estagiarios")go("intro",{key:"est",ans:{},step:0,docId:null});
-  else if(hash==="coordenadores")go("intro",{key:"coord",ans:{},step:0,docId:null});
+  S.solo=null;
+  if(hash==="aprendizes"||hash==="estagiarios"){S.solo="est";go("intro",{key:"est",ans:{},step:0,docId:null});}
+  else if(hash==="coordenadores"){S.solo="coord";go("intro",{key:"coord",ans:{},step:0,docId:null});}
   else go(hash==="painel"?"painel":"home");
 }
 window.addEventListener("hashchange",route);
