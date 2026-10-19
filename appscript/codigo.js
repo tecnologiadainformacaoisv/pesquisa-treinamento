@@ -7,7 +7,7 @@
  *   {acao:"excluir", senha, s, id}   -> remove uma resposta
  * Resposta sempre {ok:true,...} ou {ok:false, erro:"..."}; erro "senha" = senha incorreta.
  *
- * Planilha: uma aba por pesquisa (est, coord). Colunas: ID | Timestamp | <uma por pergunta> | r_json.
+ * Planilhas: uma por pesquisa (ver planilha_ / configurarPlanilhas), cada uma com a sua aba. Colunas: ID | Timestamp | <uma por pergunta> | r_json.
  * r_json (oculta) guarda a resposta completa e é a fonte do painel; as demais colunas são para consulta humana.
  * COLUNAS espelha as perguntas de SURVEYS em index.html: ao mudar perguntas lá, atualizar aqui.
  *
@@ -136,15 +136,50 @@ function estilo_(sh) {
 }
 
 /**
+ * Planilha de cada pesquisa. O id fica em Propriedades do script (ID_PLANILHA_est / ID_PLANILHA_coord),
+ * gravado por configurarPlanilhas(). Enquanto não houver id, usa a planilha à qual o script está
+ * vinculado (comportamento anterior), então nada quebra antes da configuração.
+ */
+function planilha_(chave) {
+  var id = PropertiesService.getScriptProperties().getProperty("ID_PLANILHA_" + chave);
+  return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();
+}
+
+/**
+ * Rodar UMA vez no editor (Executar > configurarPlanilhas) para separar em duas planilhas:
+ * a vinculada ao script passa a ser a de Aprendizes e é criada uma nova para Coordenadores.
+ * É aqui que o Google pede a autorização adicional para criar/abrir planilhas.
+ * Não apaga nem move dados: a aba antiga de Coordenadores na planilha de Aprendizes é mantida.
+ */
+function configurarPlanilhas() {
+  var props = PropertiesService.getScriptProperties();
+  var vinculada = SpreadsheetApp.getActiveSpreadsheet();
+  if (!props.getProperty("ID_PLANILHA_est")) props.setProperty("ID_PLANILHA_est", vinculada.getId());
+  vinculada.rename("Pesquisas de Treinamento ISV — Aprendizes");
+  if (!props.getProperty("ID_PLANILHA_coord")) {
+    var nova = SpreadsheetApp.create("Pesquisas de Treinamento ISV — Coordenadores");
+    props.setProperty("ID_PLANILHA_coord", nova.getId());
+  }
+  Object.keys(ABAS).forEach(function (k) { estilo_(aba_(k)); });
+  Logger.log("Aprendizes:    " + planilha_("est").getUrl());
+  Logger.log("Coordenadores: " + planilha_("coord").getUrl());
+}
+
+/**
  * Devolve a aba da pesquisa com o layout atual. Se existir uma aba com layout
  * antigo (cabeçalho diferente), ela é preservada renomeada e uma nova é criada.
  */
 function aba_(chave) {
   var nome = ABAS[chave];
   if (!nome) throw new Error("pesquisa");
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = planilha_(chave);
   var esperado = cabecalho_(chave);
   var sh = ss.getSheetByName(nome);
+  // planilha recém-criada: reaproveita a aba padrão vazia em vez de deixar uma sobrando
+  if (!sh && ss.getSheets().length === 1 && ss.getSheets()[0].getLastRow() === 0) {
+    sh = ss.getSheets()[0];
+    sh.setName(nome);
+  }
   if (sh && sh.getLastRow() > 0) {
     // layout antigo = sem as colunas-chave (a detecção não depende do texto das perguntas,
     // então editar rótulos à mão não faz a aba "sumir" do painel)
@@ -246,4 +281,28 @@ function excluir_(b) {
     if (ids[i][0] === b.id) { sh.deleteRow(i + 2); return {ok: true}; }
   }
   return {ok: true};
+}
+
+/**
+ * Rodar no editor depois de configurarPlanilhas(): apaga as abas sobrando de cada planilha
+ * (ex.: "(layout antigo …)" e a aba de Coordenadores de teste dentro da planilha de Aprendizes).
+ * Mantém somente a aba da própria pesquisa. Aborta sem apagar nada se as duas planilhas
+ * ainda não estiverem separadas, para nunca remover uma aba em uso.
+ */
+function limparAbasExcedentes() {
+  var props = PropertiesService.getScriptProperties();
+  var idEst = props.getProperty("ID_PLANILHA_est"), idCoord = props.getProperty("ID_PLANILHA_coord");
+  if (!idEst || !idCoord || idEst === idCoord) {
+    Logger.log("Abortado: rode configurarPlanilhas() antes (as duas planilhas precisam estar separadas).");
+    return;
+  }
+  Object.keys(ABAS).forEach(function (k) {
+    var ss = planilha_(k), manter = aba_(k);
+    ss.getSheets().forEach(function (sh) {
+      if (sh.getSheetId() !== manter.getSheetId()) {
+        Logger.log(ss.getName() + ": apagando aba \"" + sh.getName() + "\" (" + sh.getLastRow() + " linhas)");
+        ss.deleteSheet(sh);
+      }
+    });
+  });
 }

@@ -3,6 +3,10 @@
 Página única (HTML/CSS/JS, sem build) com duas pesquisas do Setor de Educação Permanente do Instituto São Vicente — **aprendizes** e **coordenadores** — e um painel protegido por senha. As respostas vão para uma planilha Google por meio de um Google Apps Script.
 
 - **Site:** https://treinamento.institutosaovicente.com.br/ (GitHub Pages, branch `master`, raiz)
+- **Links de resposta (distribuir separadamente):**
+  - Aprendizes: `https://treinamento.institutosaovicente.com.br/#oxswvcqlha`
+  - Coordenadores: `https://treinamento.institutosaovicente.com.br/#aivgq1hyzb`
+  - Os códigos ficam em `LINKS` no `index.html`. A página inicial (sem código) não lista as pesquisas. Para trocar um código, altere `LINKS` e publique de novo: o link antigo deixa de funcionar.
 - **Painel (equipe):** o link "Painel" no rodapé, ou `…/#painel`
 - **Repositório:** `tecnologiadainformacaoisv/pesquisa-treinamento`
 
@@ -14,7 +18,7 @@ Navegador (index.html) --POST--> Apps Script (appscript/codigo.js) --> Planilha 
 
 - `index.html` contém as perguntas (`SURVEYS`), o formulário e o painel.
 - `appscript/codigo.js` recebe `enviar`, `listar` e `excluir`. **Listar e excluir exigem a senha do painel**; enviar é público (é a pesquisa).
-- A planilha tem uma aba por pesquisa (**Aprendizes** e **Coordenadores**): `ID | Timestamp | uma coluna por pergunta | r_json`. A coluna `r_json` fica oculta e **não deve ser editada nem apagada**: é a fonte de dados do painel.
+- Cada pesquisa tem a sua própria planilha, com uma aba cada (**Aprendizes** e **Coordenadores**; ids em Propriedades do script, gravados por `configurarPlanilhas`): `ID | Timestamp | uma coluna por pergunta | r_json`. A coluna `r_json` fica oculta e **não deve ser editada nem apagada**: é a fonte de dados do painel.
 - Não edite os cabeçalhos das colunas `ID`, `Timestamp` e `r_json`. Os textos das perguntas podem ser ajustados, mas as respostas novas só preenchem a coluna cujo cabeçalho for igual ao texto em `COLUNAS`.
 
 ## Segurança embutida

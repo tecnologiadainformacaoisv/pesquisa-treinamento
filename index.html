@@ -286,16 +286,9 @@ function renderHome(){
   view.innerHTML='<div class="stack" style="gap:28px"><section class="hero">'+
    '<p class="eyebrow">Setor de Educação Permanente</p>'+
    '<h1>Pesquisas de <em>Necessidades de Treinamento</em></h1>'+
-   '<p class="lead">Escolha a pesquisa que corresponde à sua função. Leva cerca de 5 minutos e ajuda a definir os próximos treinamentos do Instituto São Vicente.</p>'+
+   '<p class="lead">Para responder, use o link que você recebeu do Setor de Educação Permanente. A pesquisa leva cerca de 5 minutos e ajuda a definir os próximos treinamentos do Instituto São Vicente.</p>'+
    '<hr class="rule"><div class="shapes" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div></section>'+
-   '<div class="cards">'+
-    '<section class="card"><p class="eyebrow">Para aprendizes</p><h3>Perfil e Necessidades de Desenvolvimento</h3>'+
-     '<p>13 perguntas sobre perfil acadêmico, rotina de trabalho e temas em que você gostaria de apoio. Pode ser anônima.</p>'+
-     '<button class="btn" type="button" data-open="est">Responder como aprendiz</button></section>'+
-    '<section class="card c2"><p class="eyebrow">Para coordenadores</p><h3>Necessidades de Treinamento</h3>'+
-     '<p>15 perguntas sobre a equipe, os jovens aprendizes e as prioridades de capacitação dos próximos 6 meses.</p>'+
-     '<button class="btn" type="button" data-open="coord">Responder como coordenador</button></section>'+
-   '</div></div>';
+   '</div>';
 }
 function renderIntro(){
   var sv=SURVEYS[S.key];
@@ -534,11 +527,13 @@ document.addEventListener("submit",function(e){
 });
 
 /* ---------- partida ---------- */
+/* Links de acesso: um código por pesquisa, para um grupo não chegar à pesquisa do outro mudando o endereço. */
+var LINKS={"oxswvcqlha":"est","aivgq1hyzb":"coord"};
 function route(){
   var hash=(location.hash||"").replace("#","");
   S.solo=null;
-  if(hash==="aprendizes"||hash==="estagiarios"){S.solo="est";go("intro",{key:"est",ans:{},step:0,docId:null});}
-  else if(hash==="coordenadores"){S.solo="coord";go("intro",{key:"coord",ans:{},step:0,docId:null});}
+  var key=LINKS[hash];
+  if(key){S.solo=key;go("intro",{key:key,ans:{},step:0,docId:null});}
   else go(hash==="painel"?"painel":"home");
 }
 window.addEventListener("hashchange",route);
